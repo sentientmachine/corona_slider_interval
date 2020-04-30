@@ -31,17 +31,27 @@
   <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
   <script>
   $( function() {
+
     $( "#slider-range" ).slider({
       range: true,
       min: 0,
-      max: 500,
-      values: [ 75, 300 ],
+      max: 100,
+      values: [ 0, 100 ],
       slide: function( event, ui ) {
-        $( "#amount" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
+
+
+        //1.  Get the ui.values[0] and the ui.values[1]
+        //2.  Fetch the begin date and end date. 01/01/2020 and 04/29/2020
+        //3.  Populate the date range.value to show the date on slide
+        //4.  Write a javascript function that passes the date range to the chart refresh
+        //5.  cut out the rows not in the date range
+
+        $( "#daterange" ).val( "" + ui.values[ 0 ] + " - " + ui.values[ 1 ] );
       }
     });
-    $( "#amount" ).val( "$" + $( "#slider-range" ).slider( "values", 0 ) +
-      " - $" + $( "#slider-range" ).slider( "values", 1 ) );
+
+    $( "#daterange" ).val( "" + $( "#slider-range" ).slider( "values", 0 ) +
+      " - " + $( "#slider-range" ).slider( "values", 1 ) );
   } );
   </script>
 
@@ -123,7 +133,7 @@
     </div>
     <canvas id="corona_chart"></canvas>
 
-    <label for="amount">Date range slider:</label><input type="text" id="amount" readonly style="border:0; color:#f6931f; font-weight:bold;"><div id="slider-range"></div>
+    <label for="daterange">Date range slider:</label><input type="text" id="daterange" readonly style="border:0; color:#f6931f; font-weight:bold;"><div id="slider-range"></div>
     <br>
     <br>
     <br>
