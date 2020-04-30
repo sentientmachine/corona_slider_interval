@@ -1,5 +1,13 @@
 # Replication of data and code from https://mackuba.eu/corona, and enhanced with slider intervals.
 
+I want just like the author made it, but with a slider.
+
+like this:
+
+https://ourworldindata.org/coronavirus#confirmed-deaths
+
+
+
 Front: 
 
 http://machinesentience.com/covid19.html
