@@ -18,6 +18,33 @@
   <meta name="twitter:title" content="Coronavirus charts">
   <meta name="twitter:description" content="Charts showing coronavirus growth in each country separately">
   <meta name="twitter:image" content="https://mackuba.eu/corona/screen.png">
+
+
+
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="/resources/demos/style.css">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script>
+  $( function() {
+    $( "#slider-range" ).slider({
+      range: true,
+      min: 0,
+      max: 500,
+      values: [ 75, 300 ],
+      slide: function( event, ui ) {
+        $( "#amount" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
+      }
+    });
+    $( "#amount" ).val( "$" + $( "#slider-range" ).slider( "values", 0 ) +
+      " - $" + $( "#slider-range" ).slider( "values", 1 ) );
+  } );
+  </script>
+
 </head>
 <body>
   <div id="sidebar">
@@ -72,16 +99,17 @@
         onkeypress="onAddCountryKeyPress(event);">
       <a href="#" class="add" onclick="return addSelectedCountry();"><img src="/corona/add-circle.png" alt=""></a>
       <span class="separator">&bull;</span>
-      <a href="#top_countries"
-        onclick="return selectCountrySetLink(this);">Top&nbsp;Global</a>
-      <a href="#top_in_europe"
-        onclick="return selectCountrySetLink(this);">Top&nbsp;Europe</a>
-      <a href="#top_us"
-        onclick="return selectCountrySetLink(this);">Top&nbsp;US<span class="can-hide">&nbsp;States</span></a>
+      <a href="#top_countries" onclick="return selectCountrySetLink(this);">Top&nbsp;Global</a>
+      <a href="#top_in_europe" onclick="return selectCountrySetLink(this);">Top&nbsp;Europe</a>
+      <a href="#top_us" 
+          onclick="return selectCountrySetLink(this);">Top&nbsp;US<span class="can-hide">&nbsp;States</span></a>
       <a href="#top_exc_china"
-        onclick="return selectCountrySetLink(this)">Top&nbsp;<span class="can-hide">Outside</span><span class="mobile">Ex.</span>&nbsp;China</a>
-      <a href="#compare_clear"
-        onclick="return selectCountrySetLink(this);">Clear<span class="can-hide">&nbsp;All</span></a>
+        onclick="return selectCountrySetLink(this)">Top&nbsp;<span class="can-hide">Outside</span>
+        <span class="mobile">Ex.</span>&nbsp;China</a>
+      <a href="#compare_clear" onclick="return selectCountrySetLink(this);">Clear<span class="can-hide">&nbsp;All</span></a>
+
+
+
     </div>
   </div>
 
@@ -94,6 +122,13 @@
       <img src="/corona/remove-circle-dark.png" alt=""></a>
     </div>
     <canvas id="corona_chart"></canvas>
+
+    <label for="amount">Date range slider:</label><input type="text" id="amount" readonly style="border:0; color:#f6931f; font-weight:bold;"><div id="slider-range"></div>
+    <br>
+    <br>
+    <br>
+
+
   </div>
 
   <div id="help_overlay" onclick="closeHelp();"></div>
@@ -130,10 +165,11 @@
       <p><strong>11.03</strong>: Data from the US now includes per-state entries, which is in some cases significantly higher than the previously published per-county data (e.g. Washington), hence the sudden jump in US numbers on 10 March.</p>
       <p><strong>6.03</strong>: First version.</p>
     </div>
+
   </div>
 
   <footer class="long">
-    Copyright <a href="https://mackuba.eu" target="_blank">Kuba Suder</a> |
+    CCopyright <a href="https://mackuba.eu" target="_blank">Kuba Suder</a> |
     Based on data from <a href="https://github.com/CSSEGISandData/COVID-19" target="_blank">Johns Hopkins CSSE</a>
     + <a href="/corona/overrides.json" target="_blank">fixes</a> |
     Last data update: 17 Apr 06:05 UTC.  src: <a href="https://github.com/sentientmachine/corona">https://github.com/sentientmachine/corona</a>
