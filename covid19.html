@@ -1,389 +1,182 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-  <title>
-     mackuba.eu
-  </title>
+  <title>Coronavirus charts</title>
+  <link href="/stylesheets/corona.css?1588018181" rel="stylesheet" type="text/css">
 
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width">
   <meta name="author" content="Kuba Suder">
+  <meta name="description" content="Charts showing coronavirus growth in each country separately">
 
-  <meta property="og:url" content="https://mackuba.eu/">
-  <meta property="og:title" content="mackuba.eu">
+  <meta property="og:url" content="https://mackuba.eu/corona/">
+  <meta property="og:title" content="Coronavirus charts">
   <meta property="og:type" content="website">
-  <meta property="og:description" content="Kuba Suder's blog on Mac & iOS development">
+  <meta property="og:description" content="Charts showing coronavirus growth in each country separately">
+  <meta property="og:image" content="https://mackuba.eu/corona/screen.png?1588018181">
 
   <meta name="twitter:site" content="@kuba_suder">
-  <meta name="twitter:title" content="mackuba.eu">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:description" content="Kuba Suder's blog on Mac & iOS development">
-
-  <!--
-      icons thx to:
-        Paul Robert Lloyd http://paulrobertlloyd.com
-        Mark James http://www.famfamfam.com
-        Smashing Magazine http://www.smashingmagazine.com
-        Ahmad Galal http://3nc.deviantart.com/
-        Artua Design Studios http://www.artua.com/
-        W3C http://www.w3.org/html/logo/
-        Open Clip Art Library http://www.openclipart.org/
-        Ömer ÇETİN http://omercetin.deviantart.com/
-  -->
-
-  <link rel="alternate" href="https://feeds.feedburner.com/psionides-eu" type="application/atom+xml" title="RSS feed (Atom)">
-  <link rel="shortcut icon" href="/favicon.ico?1588018181">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?1588018181">
-
-    <link href="/stylesheets/style.css?1588018181" rel="stylesheet" type="text/css">
-
-  <link href="/javascripts/fancybox/jquery.fancybox-1.3.4.css?1588018181" rel="stylesheet" type="text/css">
-  <link href="/javascripts/highlighter/shSwift.css?1588018181" rel="stylesheet" type="text/css">
-
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js" type="text/javascript"></script>
-  <script src="/javascripts/fancybox/jquery.fancybox-1.3.4.pack.js?1588018181" type="text/javascript"></script>
-  <script src="/javascripts/highlighter/shCore.js?1588018181" type="text/javascript"></script>
-  <script src="/javascripts/highlighter/shAutoloader.js?1588018181" type="text/javascript"></script>
-  <script src="/javascripts/blog.js?1588018181" type="text/javascript"></script>
-
-  <script type="text/javascript" src="/js.js" async="true"></script>
+  <meta name="twitter:title" content="Coronavirus charts">
+  <meta name="twitter:description" content="Charts showing coronavirus growth in each country separately">
+  <meta name="twitter:image" content="https://mackuba.eu/corona/screen.png?1588018181">
 </head>
-
-<body class="index">
-  <header>
-    <div class="title">
-      <h1><a href="/">MacKuba</a></h1>
-      <h4>Kuba Suder's blog on Mac & iOS development</h4>
+<body>
+  <div id="sidebar">
+    <div id="search">
+      <img src="/corona/icon-find.png?1588018181" alt="">
+      <input type="search" onkeydown="onCountrySearchKeyDown(event);" oninput="onCountrySearch(event);">
     </div>
-
-    <nav>
-      <a href="/">Blog</a>
-      <a href="/corona/">Corona Charts</a>
-
-        <a href="/projects">Projects</a>
-        <a href="/about">About</a>
-
-      <a href="https://twitter.com/kuba_suder"><img class="twitter" src="/images/twitter-logo.png?1588018181" alt="" width="24" height="24"></a>
-      <a href="https://github.com/mackuba"><img class="github" src="/images/github-mark.png?1588018181" alt="" width="20" height="20"></a>
-    </nav>
-  </header>
-
-  <div id="page">
-    <div id="page_body">
-      
-
-  <article class="long">
-  <header>
-  <h2>
-    <a href="/2020/04/03/coronavirus-charts/">Coronavirus charts</a>
-  </h2>
-  <p class="info">
-    <time datetime="2020-04-03T13:29:19Z" title="2020-04-03T13:29:19Z">
-      Friday,  3 April 2020
-    </time>
-    <span class="tags">
-      <img alt="Categories:" src="/images/tag_blue.png?1588018181" width="16" height="16">
-      <a href="/category/frontend/">Frontend</a>, <a href="/category/javascript/">JavaScript</a>, <a href="/category/ruby-rails/">Ruby/Rails</a>
-    </span>
-    <span class="comments">
-      <img src="/images/comment.png?1588018181" alt="" width="16" height="16">
-      <a href="/2020/04/03/coronavirus-charts/#comments">11 comments</a>
-    </span>
-  </p>
-</header>
-
-
-  <div class="body">
-    <p>I&rsquo;ve been tracking the growth of the new coronavirus ever since it first appeared in China in the last week of January, and even more since it spread to Europe around mid February. Initially I&rsquo;ve been looking mostly at the popular <a href="https://gisanddata.maps.arcgis.com/apps/opsdashboard/index.html#/bda7594740fd40299423467b48e9ecf6">ArcGIS dashboard</a> made by Johns Hopkins University that everyone is probably familiar with.</p>
-
-<p>However, I&nbsp;really wanted to see some charts showing how the numbers grow in each country separately, since just seeing &ldquo;8000 in Italy&rdquo; doesn&rsquo;t tell me much if I&nbsp;don&rsquo;t remember how much it was yesterday. At that point it wasn&rsquo;t possible to see that kind of information on the dashboard, and I&nbsp;couldn&rsquo;t find any other source that showed that in an accessible way.</p>
-
-<p>But then I&nbsp;saw a mention in the footer on the dashboard that the authors have shared all their data (including past numbers) in a <a href="https://github.com/CSSEGISandData/COVID-19">GitHub repository</a> in the form of CSV files. So of course I&nbsp;decided to do <a href="https://media.oglaf.com/comic/labyrinth.jpg">what always comes to my mind</a> when I&nbsp;have a problem to solve… build a new project&nbsp;:)</p>
-
-<p>And that&rsquo;s how the <a href="https://mackuba.eu/corona/">Coronavirus charts</a> site was born.</p>
-
+    <ul id="list"></ul>
   </div>
 
-    <p class="read_more">
-      <a href="/2020/04/03/coronavirus-charts/">Read more &raquo;</a>
-    </p>
-</article>
-
-  <article class="long">
-  <header>
-  <h2>
-    <a href="/2019/12/16/swiftui-quotes/">SwiftUI quotes</a>
-  </h2>
-  <p class="info">
-    <time datetime="2019-12-16T21:44:00Z" title="2019-12-16T21:44:00Z">
-      Monday, 16 December 2019
-    </time>
-    <span class="tags">
-      <img alt="Categories:" src="/images/tag_blue.png?1588018181" width="16" height="16">
-      <a href="/category/cocoa/">Cocoa</a>, <a href="/category/mac/">Mac</a>, <a href="/category/iphone/">iPhone</a>
+  <nav>
+    <a id="help_button" href="#" onclick="return showHelp();"><img src="/corona/help-circle.png?1588018181" alt=""></a>
+    <a id="settings_button" href="#" onclick="return toggleExtraPanel();"><img src="/corona/cog.png?1588018181" alt=""></a>
+    <span class="segment" id="current_mode" style="display: none;">
+      <a href="#" data-mode="linear" class="first selected" onclick="return selectMode(this);">Linear</a><!-- 
+      --><a href="#" data-mode="logarithmic" onclick="return selectMode(this);">Logarithmic</a><!--
+      --><a href="#" data-mode="daily" onclick="return selectMode(this);">Daily change</a><!--
+      --><a href="#" data-mode="percent" class="last" onclick="return selectMode(this);">% change</a>
     </span>
-    <span class="comments">
-      <img src="/images/comment.png?1588018181" alt="" width="16" height="16">
-      <a href="/2019/12/16/swiftui-quotes/#comments">0 comments</a>
+    <span id="extra_panel">
+      <span class="panel-content">
+        <span class="segment" id="value_to_show" style="display: none;">
+          <a href="#" data-mode="confirmed" class="first selected"
+            onclick="return selectValueMode(this);">Confirmed</a><!-- 
+          --><a href="#" data-mode="active" onclick="return selectValueMode(this);">Active</a><!--
+          --><a href="#" data-mode="deaths" class="last" onclick="return selectValueMode(this);">Deaths</a>
+        </span>
+        <span id="checkboxes" style="display: none;">
+          <span id="span_align_by_100">
+            <input type="checkbox" id="align_by_100" onchange="changeAlignByDate();">
+            <label for="align_by_100">Align by day of 100th case</label><br>
+          </span>
+
+          <span id="span_last_weeks">
+            <input type="checkbox" id="last_weeks" onchange="changeLastWeeks();">
+            <label for="last_weeks">Show last 4 weeks</label><br>
+          </span>
+
+          <span id="span_by_population">
+            <input type="checkbox" id="by_population" onchange="changeByPopulation();">
+            <label for="by_population">Per 1 mln population</label><br>
+          </span>
+
+          <span id="span_show_trend">
+            <input type="checkbox" id="show_trend" onchange="changeShowTrend();">
+            <label for="show_trend">Show
+              <input type="text" id="trend_length" value="3" onchange="changeShowTrend();"
+               onfocus="onFocusTrendLength(this);" onblur="onBlurTrendLength(this);">-day trend</label>
+            <br>
+          </span>
+        </span>
+      </span>
     </span>
-  </p>
-</header>
+  </nav>
 
-
-  <div class="body">
-    <p>I&nbsp;was going through some saved links and open tabs from June recently while finishing the <a href="/2019/12/03/new-stuff-from-wwdc-2019/">WWDC collection post</a>. I&nbsp;found a lot of interesting quotes about SwiftUI, Catalyst and the future of Apple platform development, and I&nbsp;decided to steal the idea from <a href="https://mjtsai.com/blog/2019/06/03/swiftui-and-combine/">@mjtsai</a> and put them together in one place. It might be interesting to look at this 5 or 10 years from now…</p>
-
-  </div>
-
-    <p class="read_more">
-      <a href="/2019/12/16/swiftui-quotes/">Read more &raquo;</a>
-    </p>
-</article>
-
-  <article class="long">
-  <header>
-  <h2>
-    <a href="/2019/12/03/new-stuff-from-wwdc-2019/">New stuff from WWDC 2019</a>
-  </h2>
-  <p class="info">
-    <time datetime="2019-12-03T00:31:00Z" title="2019-12-03T00:31:00Z">
-      Tuesday,  3 December 2019
-    </time>
-    <span class="tags">
-      <img alt="Categories:" src="/images/tag_blue.png?1588018181" width="16" height="16">
-      <a href="/category/cocoa/">Cocoa</a>, <a href="/category/mac/">Mac</a>, <a href="/category/iphone/">iPhone</a>
-    </span>
-    <span class="comments">
-      <img src="/images/comment.png?1588018181" alt="" width="16" height="16">
-      <a href="/2019/12/03/new-stuff-from-wwdc-2019/#comments">0 comments</a>
-    </span>
-  </p>
-</header>
-
-
-  <div class="body">
-    <p class="image hide-in-intro"><img alt="WWDC 2019" src="/images/posts/wwdc2019.jpg" width="600"></p>
-
-<p>As I&rsquo;m writing these words, it&rsquo;s the last day of November and the temperature has just dropped to close to 0°C here in Poland. But let&rsquo;s move back to a better time for a moment, to the first days of June &ndash; the long days of warm sunny weather, inviting you to spend some time outside… and the huge pile of new stuff that Apple had just dropped on us on the WWDC keynote day, inviting you to try to frantically read and watch everything at once, and don&rsquo;t leave the computer until you&rsquo;ve read it all.</p>
-
-<p>For the past 4 years I&rsquo;ve been trying to cope with this crazy period by collecting notes from the WWDC talks, release notes, saving tweets, links to blog posts and so on, and organizing it all in a single ordered blog post. Writing things down this way is how I&nbsp;learn best, it helps me put together all loose pieces of information into a <a href="/2018/12/18/watchkit-adventure-1-the-big-picture/">single picture</a>, and gives me the peace of mind that I&nbsp;haven&rsquo;t missed or forgotten anything important.</p>
-
-<p>I&nbsp;usually finish this by July, but this year was different &ndash; first I&nbsp;got really hooked on SwiftUI&nbsp;and spent some time <a href="/2019/06/17/swiftui-appkit-dark-mode-switcher/">doing some experiments with it</a>, and then I&nbsp;was busy working on and releasing <a href="https://apps.apple.com/us/app/id1031752878?mt=12">my iOS content blocker app</a> and doing some <a href="/images/posts/beinn-a-chrulaiste.jpg">travelling</a>. It didn&rsquo;t help that the sheer <a href="https://twitter.com/kuba_suder/status/1200738447792726017">amount of new APIs</a> added this year was simply overwhelming.</p>
-
-<p>So I&nbsp;finally got back to this in November, and I&rsquo;m posting the list here on the half-anniversary of the 2019 keynote (yes, it&rsquo;s really been 6 months already!) &ndash; hopefully it will still be of use to you.</p>
-
-  </div>
-
-    <p class="read_more">
-      <a href="/2019/12/03/new-stuff-from-wwdc-2019/">Read more &raquo;</a>
-    </p>
-</article>
-
-  <article class="long">
-  <header>
-  <h2>
-    <a href="/2019/06/17/swiftui-appkit-dark-mode-switcher/">SwiftUI on AppKit: Building a Dark Mode switcher</a>
-  </h2>
-  <p class="info">
-    <time datetime="2019-06-17T01:05:44Z" title="2019-06-17T01:05:44Z">
-      Monday, 17 June 2019
-    </time>
-    <span class="tags">
-      <img alt="Categories:" src="/images/tag_blue.png?1588018181" width="16" height="16">
-      <a href="/category/cocoa/">Cocoa</a>, <a href="/category/mac/">Mac</a>
-    </span>
-    <span class="comments">
-      <img src="/images/comment.png?1588018181" alt="" width="16" height="16">
-      <a href="/2019/06/17/swiftui-appkit-dark-mode-switcher/#comments">3 comments</a>
-    </span>
-  </p>
-</header>
-
-
-  <div class="body">
-    <p>I&nbsp;spent a large part of last week learning and playing with SwiftUI. So far it&rsquo;s been pretty frustrating at times since I&nbsp;kind of feel like I&nbsp;forgot everything I&nbsp;knew, but I&rsquo;m also very excited about where this will lead us. I&rsquo;ve summed up my first impressions in the <a href="/2019/06/14/thoughts-on-swiftui/">&ldquo;Thoughts on SwiftUI&rdquo;</a> post last week.</p>
-
-<p>At the moment most of the available examples show how to use SwiftUI&nbsp;in iOS apps, but I&nbsp;wanted to see how it would work on the Mac (in AppKit), since it&rsquo;s kind of closer to my heart (hint: look at the domain name&nbsp;:).</p>
-
-<p>And I&nbsp;had an idea: last year, when I&nbsp;was playing with the new <a href="/2018/07/10/dark-side-mac-2/">Dark Mode</a> in macOS Mojave I&nbsp;had a plan to build a simple app that would let you override the appearance in specific apps using the <code>NSRequiresAquaSystemAppearance</code> setting. I&nbsp;started working on it, but I&nbsp;got stuck while figuring out the complex <code>NSTableView</code> API&nbsp;which I&nbsp;had no experience with, and I&nbsp;gave up.</p>
-
-<p>So, how about I&nbsp;give it another try now, but with SwiftUI? I&nbsp;don&rsquo;t really need such app myself (I&nbsp;only use light mode), and I&rsquo;m pretty sure I&rsquo;ve seen other similar apps last year, but this seems like a perfect way to try out SwiftUI&nbsp;on the Mac &ndash; and to see if it will be easier to get the table view to work&hellip;</p>
-
-  </div>
-
-    <p class="read_more">
-      <a href="/2019/06/17/swiftui-appkit-dark-mode-switcher/">Read more &raquo;</a>
-    </p>
-</article>
-
-  <article class="long">
-  <header>
-  <h2>
-    <a href="/2019/06/14/thoughts-on-swiftui/">Thoughts on SwiftUI</a>
-  </h2>
-  <p class="info">
-    <time datetime="2019-06-14T13:04:18Z" title="2019-06-14T13:04:18Z">
-      Friday, 14 June 2019
-    </time>
-    <span class="tags">
-      <img alt="Categories:" src="/images/tag_blue.png?1588018181" width="16" height="16">
-      <a href="/category/cocoa/">Cocoa</a>, <a href="/category/mac/">Mac</a>, <a href="/category/ios/">iOS</a>
-    </span>
-    <span class="comments">
-      <img src="/images/comment.png?1588018181" alt="" width="16" height="16">
-      <a href="/2019/06/14/thoughts-on-swiftui/#comments">0 comments</a>
-    </span>
-  </p>
-</header>
-
-
-  <div class="body">
-    <p>Like everyone, I&nbsp;was shocked by Apple&rsquo;s surprise reveal of <a href="https://developer.apple.com/xcode/swiftui/">SwiftUI</a> at WWDC last week. We&rsquo;ve heard <a href="https://daringfireball.net/2018/04/scuttlebutt_regarding_ui_project">rumors</a> of some kind of declarative, multi-platform framework coming sometime in the future, but I&nbsp;don&rsquo;t think anyone expected we&rsquo;d see it so soon. This seems like a huge change, a beginning of a <a href="https://inessential.com/2019/06/07/the_next_era_ends_the_swift_era_begins">completely new chapter</a> for app developers on Apple platforms. I&rsquo;ve watched most of the session videos about SwiftUI&nbsp;and I&rsquo;m incredibly excited and eager to start using it in practice.</p>
-
-<p>Here are some first impressions and thoughts about SwiftUI&nbsp;after reading about it and playing with it for a few days:</p>
-
-  </div>
-
-    <p class="read_more">
-      <a href="/2019/06/14/thoughts-on-swiftui/">Read more &raquo;</a>
-    </p>
-</article>
-
-  <article class="long">
-  <header>
-  <h2>
-    <a href="/2019/03/06/watchkit-adventure-2-mvc/">WatchKit Adventure #2: Minimum Viable Complication</a>
-  </h2>
-  <p class="info">
-    <time datetime="2019-03-06T21:17:18Z" title="2019-03-06T21:17:18Z">
-      Wednesday,  6 March 2019
-    </time>
-    <span class="tags">
-      <img alt="Categories:" src="/images/tag_blue.png?1588018181" width="16" height="16">
-      <a href="/category/cocoa/">Cocoa</a>, <a href="/category/watchkit/">WatchKit</a>, <a href="/category/iphone/">iPhone</a>
-    </span>
-    <span class="comments">
-      <img src="/images/comment.png?1588018181" alt="" width="16" height="16">
-      <a href="/2019/03/06/watchkit-adventure-2-mvc/#comments">11 comments</a>
-    </span>
-  </p>
-</header>
-
-
-  <div class="body">
-    <p class="hide-in-intro"><a href="/2018/12/18/watchkit-adventure-1-the-big-picture/">&lt; Previously on WatchKit Adventure…</a></p>
-
-<p>This post is the second (or technically third) part of my series about building a WatchKit app that shows current air pollution level on the watch face. If you haven&rsquo;t seen the previous parts, you might want to at least take a look at <a href="/2018/10/29/watchkit-adventure-0-intro/">the intro</a>.</p>
-
-<p>Last time we&rsquo;ve talked mostly about <a href="/2018/12/18/watchkit-adventure-1-the-big-picture/">the general architecture of a WatchKit app</a>. So logically it would now make the most sense to start with the main part of a watch app, the main app UI. After all, this is the only part of the app that&rsquo;s required &ndash; both notifications and complications are optional if you don&rsquo;t need them. This is what people normally think of when they talk about &ldquo;an app&rdquo;.</p>
-
-<p>However&hellip; the whole thing started with me wanting to see the level of air pollution right there on the watch face, as quickly as possible. One of the three main rules of watchOS design is that apps should be <em>glanceable</em>, which means that you should be able to glance at the watch and see the information you need in as short time as possible, ideally within a couple of seconds at most &ndash; and a complication lets you see this information much much faster than the main app UI&nbsp;accessible from the app launcher.</p>
-
-<p>It was also mentioned during at least one presentation that unlike on iOS, here the main UI&nbsp;does not need to be the most commonly used part of your app, if notifications or a complication make more sense for your use case. It can very well be something that users only fall back to sometimes when they need to see more detailed information or perform some actions.</p>
-
-<p>So, why don&rsquo;t we skip the view controllers for now and just build a complication?</p>
-
-  </div>
-
-    <p class="read_more">
-      <a href="/2019/03/06/watchkit-adventure-2-mvc/">Read more &raquo;</a>
-    </p>
-</article>
-
-  <article class="long">
-  <header>
-  <h2>
-    <a href="/2019/02/02/setting-up-piwik/">Setting up Piwik (Matomo) analytics on Ubuntu + Nginx</a>
-  </h2>
-  <p class="info">
-    <time datetime="2019-02-02T20:13:34Z" title="2019-02-02T20:13:34Z">
-      Saturday,  2 February 2019
-    </time>
-    <span class="tags">
-      <img alt="Categories:" src="/images/tag_blue.png?1588018181" width="16" height="16">
-      <a href="/category/linux/">Linux</a>
-    </span>
-    <span class="comments">
-      <img src="/images/comment.png?1588018181" alt="" width="16" height="16">
-      <a href="/2019/02/02/setting-up-piwik/#comments">0 comments</a>
-    </span>
-  </p>
-</header>
-
-
-  <div class="body">
-    <p>I&rsquo;ve used several website analytics services over the years, including <a href="https://statcounter.com">Statcounter</a>, <a href="https://www.w3counter.com">W3Counter</a>, <a href="https://clicky.com">Clicky</a> and <a href="https://get.gaug.es">Gauges</a> (Google Analytics always seemed kind of too complicated and pro-focused for me). I&nbsp;don&rsquo;t really need any complex functionality &ndash; just show me the number of visits in a given period, which pages were popular, what parts of the world people come from, what browsers/devices they use, and who links to me &ndash; so I&nbsp;was mostly satisfied with these products. The difference was mostly the friendliness and readability of the UI.</p>
-
-<p>However, in the recent years, with the EU cookie law first and now GDPR, I&nbsp;started thinking about using something that allows me more control over the data and lets me avoid the dilemma of what kind of disclaimers I&rsquo;m technically supposed to show on my site. Showing one of those idiotic &ldquo;cookie banners&rdquo; obviously isn&rsquo;t an option since I&rsquo;ve devoted so much time and energy <a href="https://itunes.apple.com/pl/app/banner-hunter/id1151217174?mt=12">fighting them</a>, and I&nbsp;don&rsquo;t think there&rsquo;s a single person who actually wants to read them, but still, am I&nbsp;breaking some laws by not having one? I&nbsp;really don&rsquo;t want to think about this.</p>
-
-<p>I&nbsp;found <a href="https://matomo.org">Piwik (now Matomo)</a>, which is a self-hosted analytics service, a couple of years ago &ndash; but I&nbsp;didn&rsquo;t have time to research it properly and set it up on my server until now. It eventually took much more time than I&nbsp;planned (and that I&rsquo;d like to admit), partly because of my specific setup, partly just because of my own personal requirements and the perfectionist approach&hellip; So I&nbsp;wrote down all the steps just in case I&nbsp;need to come back to this again later, and I&rsquo;m sharing it with the hope that it will save someone else some time.</p>
-
-  </div>
-
-    <p class="read_more">
-      <a href="/2019/02/02/setting-up-piwik/">Read more &raquo;</a>
-    </p>
-</article>
-
-  <article class="long">
-  <header>
-  <h2>
-    <a href="/2018/12/18/watchkit-adventure-1-the-big-picture/">WatchKit Adventure #1: The Big Picture</a>
-  </h2>
-  <p class="info">
-    <time datetime="2018-12-18T14:11:52Z" title="2018-12-18T14:11:52Z">
-      Tuesday, 18 December 2018
-    </time>
-    <span class="tags">
-      <img alt="Categories:" src="/images/tag_blue.png?1588018181" width="16" height="16">
-      <a href="/category/cocoa/">Cocoa</a>, <a href="/category/watchkit/">WatchKit</a>, <a href="/category/iphone/">iPhone</a>
-    </span>
-    <span class="comments">
-      <img src="/images/comment.png?1588018181" alt="" width="16" height="16">
-      <a href="/2018/12/18/watchkit-adventure-1-the-big-picture/#comments">3 comments</a>
-    </span>
-  </p>
-</header>
-
-
-  <div class="body">
-    <p><strong>Update 03.07.2019</strong>: watchOS 6 has changed a lot of things that I&rsquo;ve written about here, so I&nbsp;went through the post again and updated all parts that got out of date.</p>
-
-<hr />
-
-<p class="hide-in-intro"><a href="/2018/10/29/watchkit-adventure-0-intro/">&lt; Previously on WatchKit Adventure…</a></p>
-
-<p>For some reason, after watching WWDC talks mentioning watchOS in the last few years, I&nbsp;had this image in my mind that almost every version changed everything in how apps are built. I&nbsp;remembered something about native and non-native apps, two different types of app schemes in Xcode, and some diagrams of pieces moving from one box to another, on more than one occasion. This all sounded confusing, and I&nbsp;think that&rsquo;s one reason why I&nbsp;was discouraged from starting, because I&nbsp;imagined it would make it hard for me to catch up with all of that.</p>
-
-<p>As it turned out, this wasn&rsquo;t really true. Well, not until watchOS 6 at least 😉</p>
-
-  </div>
-
-    <p class="read_more">
-      <a href="/2018/12/18/watchkit-adventure-1-the-big-picture/">Read more &raquo;</a>
-    </p>
-</article>
-
-
-<nav class="bottom">
-    <div class="previous"><a href="/page/2/">&larr; Older entries</a></div>
-
-
-</nav>
-
+  <div id="country_selection" style="display: none;">
+    <datalist id="country_list"></datalist>
+    <div class="box">
+      Add country<span class="can-hide">/region</span>:
+      <input type="text" id="place_search" autocomplete="off" list="country_list"
+        onkeypress="onAddCountryKeyPress(event);">
+      <a href="#" class="add" onclick="return addSelectedCountry();"><img src="/corona/add-circle.png?1588018181" alt=""></a>
+      <span class="separator">&bull;</span>
+      <a href="#top_countries"
+        onclick="return selectCountrySetLink(this);">Top&nbsp;Global</a>
+      <a href="#top_in_europe"
+        onclick="return selectCountrySetLink(this);">Top&nbsp;Europe</a>
+      <a href="#top_us"
+        onclick="return selectCountrySetLink(this);">Top&nbsp;US<span class="can-hide">&nbsp;States</span></a>
+      <a href="#compare_clear"
+        onclick="return selectCountrySetLink(this);">Clear<span class="can-hide">&nbsp;All</span></a>
     </div>
-
-    <footer>
-      <p><a href="/sitemap">Sitemap</a> • <a href="/feed.xml">RSS</a></p>
-      <p>Copyright &copy; 2008–2020 Kuba Suder, all rights reserved.</p>
-    </footer>
   </div>
+
+
+  <div id="chart_container">
+    <div id="iphone_portrait_warning">
+      Warning: on smartphones it's recommended to view the site in landscape mode.
+      <a class="close" href="#"
+        onclick="document.getElementById('iphone_portrait_warning').style.display = 'none'; return false;">
+      <img src="/corona/remove-circle-dark.png?1588018181" alt=""></a>
+    </div>
+    <canvas id="corona_chart"></canvas>
+  </div>
+
+  <div id="help_overlay" onclick="closeHelp();"></div>
+  <div id="help_container">
+    <a class="close" href="#" onclick="return closeHelp();"><img src="/corona/remove-circle-white.png?1588018181" alt=""></a>
+    <div class="content">
+      <p>Note: data updates may be delayed due to changes in the source data that require updating the import code. You should see a warning if that happens. Data is also usually several hours behind the official dashboard - see the "last data update" in the footer.</p>
+      <h2>Changelog</h2>
+      <p><strong>25.04</strong>: The "Top Global" country set in the Compare view now excludes China, removed separate "Top Outside China" button. (You can always add China to any set through the "Add country" field.)</p>
+      <p><strong>24.04</strong>: On the "Daily change" and "% change" comparison charts you can now choose to see either raw values from that day or e.g. a 3-day or 5-day trend, and you can choose any trend length you want.</p>
+      <p><strong>22.04</strong>: Added some keyboard support - Cmd-F/Ctrl-F should focus the country search field, double ESC exits the field, and you should be able to move through the list of countries using up and down arrows.</p>
+      <p><strong>22.04</strong>: The JHU data keeps having issues with some areas, e.g. the increased numbers in France or the recent lack of updates in Australia, not to mention weird things happening regularly in the deaths & recovered numbers. I'm starting to look for other possible sources to at least supplement the JHU data in some problematic regions.</p>
+      <p><strong>17.04</strong>: You can now compare active cases in the Compare view. Active cases are not available for the places where I don't have the recovered numbers, which includes all US states and Canadian provinces.</p>
+      <p><strong>11.04</strong>: Added a new "Top US States" country set in the Compare view (yes, you can compare all states and provinces together with countries, plus the EU and Europe total).</p>
+      <p><strong>11.04</strong>: The URL should now store all current settings, including the set of selected countries, so you can bookmark or share a link and it should get you back to the same view as before, showing the same countries in the same configuration. Regardless of that, the Compare view will now always show the last seen set of countries by default, even after a reload.</p>
+      <p><strong>8.04</strong>: Mobile layout improvements: removed touch delay on buttons, sidebar and footer are slightly smaller, and some switches in the "Compare" view have been moved to a new additional panel which you can access through the "settings" (cog wheel) button on the right (the button is only visible on smaller screens).</p>
+      <p><strong>7.04</strong>: The "% increase" mode in Compare Countries now shows a 3-day trend instead of 5-day. The "Show last 3 weeks" checkbox automatically sets the max on the Y axis based on the maximum value during these 3 weeks.</p>
+      <p><strong>7.04</strong>: "Daily increase" mode is now available in the Compare Countries view.</p>
+      <p><strong>6.04</strong>: JHU have done something weird with the data from France since 4/4 (see <a href="https://www.lemonde.fr/planete/live/2020/04/05/coronavirus-aux-etats-unis-trump-annonce-une-periode-qui-va-etre-vraiment-horrible_6035613_3244.html?highlight=1187488818" target="_blank">comment from Le Monde here</a>, in French). The data from WHO, ECDC and the French government all show case numbers around 70K, not 90K. There are a few GitHub issue threads discussing this, but JHU hasn't responded yet (they rarely do). For now I'm overriding the numbers manually with the French government data.</p>
+      <p><strong>6.04</strong>: Added "Europe" and "EU 27" entries to the "Add country" search field so they can be compared e.g. with the US as a total. "Europe" total does not include Russia, Turkey and the Caucasus countries, but includes Greenland. (Tip: you can add EU 27 by typing simply "eu", United Kingdom by typing "uk" and United States by typing "us", and pressing enter after each.)</p>
+      <p><strong>2.04</strong>: Added a fourth line with active cases on single country views (where the number of recovered is available).</p>
+      <p><strong>31.03</strong>: Recent US state data is now taken from the new separate US data files that JHU has added last night (they're one day behind the global data).</p>
+      <p><strong>29.03</strong>: Added dark mode support (automatically follows the OS's theme).</p>
+      <p><strong>28.03</strong>: The URL now includes the linear/logarithmic/daily increase/percent setting, e.g. a link like <a href="https://mackuba.eu/corona/#europe.perc" target="_blank">https://mackuba.eu/corona/#europe.perc</a> will automatically open the % increase view. (Other settings like align by day or the selected set of countries in compare view aren't saved yet.)</p>
+      <p><strong>28.03</strong>: JHU has brought back the data file for recovered, so I've added that back to the charts. As for the US states, I'm evaluating another source from NYTimes.</p>
+      <p><strong>27.03</strong>: Added "Per 1 mln population" switch in the compare view.</p>
+      <p><strong>27.03</strong>: Added "% daily increase" mode in single country charts and the compare view.</p>
+      <p><strong>26.03</strong>: Added a search field in the country list sidebar.</p>
+      <p><strong>23.03</strong>: You can now add states and provinces to the Compare chart.</p>
+      <p><strong>23.03</strong>: Removed the "Top Countries" and "Top in Europe" views - use "Compare Countries" instead.</p>
+      <p><strong>23.03</strong>: Added an option to compare the number of deaths in "Compare Countries".</p>
+      <p><strong>18.03</strong>: Added a new section "Compare Countries" that works like the old "Top countries" sections, but lets you pick any country set, choose logarithmic scale, and align the data series horizontally by day since the 100th confirmed case.</p>
+      <p><strong>16.03</strong>: Several additional values from previous days for various countries were fixed manually (see below).</p>
+      <p><strong>16.03</strong>: The source data is sometimes missing new data for some important countries. In some cases I manually override the data with values found elsewhere - there is now a link in the footer that lists all those <a href="/corona/overrides.json?1588018181" target="_blank">data fixes</a>.</p>
+      <p><strong>12.03</strong>: Added last data update info in the footer.</p>
+      <p><strong>12.03</strong>: Added the "Top in Europe" chart.</p>
+      <p><strong>11.03</strong>: You can now link to a specific country chart, e.g. <a href="https://mackuba.eu/corona/#italy" target="_blank">https://mackuba.eu/corona/#italy</a>.</p>
+      <p><strong>11.03</strong>: Added this info dialog.</p>
+      <p><strong>11.03</strong>: Data from the US now includes per-state entries, which is in some cases significantly higher than the previously published per-county data (e.g. Washington), hence the sudden jump in US numbers on 10 March.</p>
+      <p><strong>6.03</strong>: First version.</p>
+    </div>
+  </div>
+
+  <footer class="long">
+    © <a href="https://mackuba.eu" target="_blank">Kuba Suder</a> |
+    Based on data from <a href="https://github.com/CSSEGISandData/COVID-19" target="_blank">Johns Hopkins CSSE</a>
+    + <a href="/corona/overrides.json?1588018181" target="_blank">fixes</a> |
+    Last data update: 3 May 06:05 UTC
+  </footer>
+
+  <footer class="short">
+    © <a href="https://mackuba.eu" target="_blank">Kuba Suder</a> |
+    Data: <a href="https://github.com/CSSEGISandData/COVID-19" target="_blank">Johns Hopkins CSSE</a>
+    + <a href="/corona/overrides.json?1588018181" target="_blank">fixes</a> |
+    Updated: 3.05 06:05 UTC
+  </footer>
 
   <script type="text/javascript">
-    $(document).ready(function() {
-      Blog.init();
+    window.currentMode = 'linear';
+    window.europeanCountries = ["Albania","Andorra","Austria","Belarus","Belgium","Bosnia and Herzegovina","Bulgaria","Channel Islands","Croatia","Cyprus","Czechia","Denmark","Estonia","Faroe Islands","Finland","France","Germany","Gibraltar","Greece","Greenland","Hungary","Iceland","Ireland","Isle of Man","Italy","Kosovo","Latvia","Liechtenstein","Lithuania","Luxembourg","Malta","Moldova","Monaco","Montenegro","Netherlands","North Macedonia","Norway","Poland","Portugal","Romania","San Marino","Serbia","Slovakia","Slovenia","Spain","Sweden","Switzerland","Ukraine","United Kingdom","Vatican"];
+    window.euCountries = ["Austria","Belgium","Bulgaria","Croatia","Cyprus","Czechia","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Ireland","Italy","Latvia","Lithuania","Luxembourg","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Slovenia","Spain","Sweden"];
+
+    fetch("/corona/data.json?1588018181").then(function(response) {
+      return response.json();
+    }).then(function(json) {
+      window.coronaData = json;
+
+      if (window.coronaLoaded) {
+        initCorona();
+      }
+    }).catch(function(err) {
+      console.error("Error:", err);
     });
   </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" type="text/javascript"></script>
+  <script src="/javascripts/corona.js?1588018181" type="text/javascript"></script>
 </body>
 </html>
