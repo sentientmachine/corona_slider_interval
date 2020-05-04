@@ -18,12 +18,11 @@ body {
 }
 
 nav {
-  height: 65px;
+  height: 70px;
   position: relative;
   box-sizing: border-box;
   text-align: center;
   padding-top: 25px;
-  margin-left: 40px;
 }
 
 nav .segment {
@@ -34,7 +33,7 @@ nav .segment a {
   position: relative;
   border: 1px solid #ccc;
   border-right: none;
-  padding: 6px 14px;
+  padding: 6px 13px;
   text-decoration: none;
   color: #444;
   font-size: 11pt;
@@ -77,8 +76,12 @@ nav .beta {
 #checkboxes {
   font-size: 11pt;
   vertical-align: top;
-  margin-top: -10px;
+  margin-top: -9px;
   text-align: left;  
+}
+
+#checkboxes.shows3 {
+  margin-top: -18px;
 }
 
 #checkboxes span {
@@ -91,10 +94,23 @@ nav .beta {
   right: -45px;
 }
 
-#checkboxes input {
+#checkboxes input[type=checkbox] {
   margin-right: 5px;
+  margin-bottom: 4px;
   position: relative;
   bottom: 1px;
+}
+
+#checkboxes input[type=text] {
+  margin: 0px;
+  padding-top: 0px;
+  width: 10px;
+  cursor: default;
+  vertical-align: middle;
+}
+
+#checkboxes input[type=text]:focus {
+  cursor: text;
 }
 
 #checkboxes label {
@@ -251,7 +267,7 @@ nav .beta {
 
 #chart_container {
   position: relative;
-  height: calc(100vh - 70px);
+  height: calc(100vh - 75px);
   padding: 40px;
   padding-top: 0px;
   padding-bottom: 50px;
@@ -374,6 +390,10 @@ nav .beta {
 
 #list li a:hover {
   background-color: #eee;
+}
+
+#list li a:focus {
+  outline: none;
 }
 
 #list li a.selected {
@@ -568,7 +588,7 @@ footer.short {
   }
 }
 
-@media only screen and (max-width: 1200px) {
+@media only screen and (max-width: 1220px) {
   body {
     padding-left: 275px;
   }
@@ -618,10 +638,11 @@ footer.short {
     display: inline;
     top: 22px;
     right: 65px;
+  }
 
-    border: 2px solid red;
-    padding: 4px 4px 0px;
-    top: 16px;
+  #settings_button img {
+    width: 24px;
+    margin-top: 1px;
   }
 
   nav.compare #current_mode {
@@ -631,7 +652,7 @@ footer.short {
   #extra_panel {
     display: none;
     position: absolute;
-    top: 40px;
+    top: 45px;
     left: 0px;
     width: 100%;
     margin: 0 auto;
@@ -643,7 +664,7 @@ footer.short {
   }
 
   #extra_panel .panel-content {
-    padding: 25px;
+    padding: 30px 25px;
     border: 2px solid #ccc;
     border-radius: 8px;
     background: white;
@@ -676,6 +697,20 @@ footer.short {
     width: 250px;
   }
 
+  #settings_button img {
+    width: 26px;
+    margin-top: 0px;
+  }
+
+  #checkboxes.shows3 {
+    margin-top: -23px;
+  }
+
+  #checkboxes input[type=checkbox] {
+    bottom: -1px;
+    margin-right: 2px;
+  }
+
   footer {
     font-size: 7pt;
   }
@@ -695,7 +730,7 @@ footer.short {
   }
 }
 
-@media only screen and (max-width: 1200px) and (prefers-color-scheme: dark) {
+@media only screen and (max-width: 1220px) and (prefers-color-scheme: dark) {
   nav.compare #settings_button img {
     filter: invert();
   }
