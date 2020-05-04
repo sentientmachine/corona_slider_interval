@@ -173,7 +173,8 @@ window.stateCodes = {
     "South Carolina": "us-sc", "South Dakota": "us-sd", "Tennessee": "us-tn", "Texas": "us-tx", "United States Minor Outlying Islands": "us-um",
     "Utah": "us-ut", "Vermont": "us-vt", "Virgin Islands": "us-vi", "Virginia": "us-va", "Washington": "us-wa",
     "West Virginia": "us-wv", "Wisconsin": "us-wi", "Wyoming": "us-wy",
-    "Diamond Princess": "us-xdp", "Grand Princess": "us-xgp"
+    "Diamond Princess": "us-xdp", "Grand Princess": "us-xgp", "Federal Bureau of Prisons": "us-xfp",
+    "US Military": "us-xml", "Veteran Hospitals": "us-xvh" 
   },
   "Canada": {
     "Alberta": "ca-ab", "British Columbia": "ca-bc", "Manitoba": "ca-mb", "New Brunswick": "ca-nb",
@@ -202,6 +203,87 @@ window.specialCodes = {
 }
 
 let BASIC_MODES = ['linear', 'logarithmic'];
+let LAST_WEEKS_DAYS = 28;
+let DEFAULT_TREND = 5;
+let WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; // sigh, America
+
+
+// --- Place
+
+class Place {
+  constructor(country, region) {
+    if (Array.isArray(country)) {
+      this.country = country[0];
+      this.region = country[1];
+    } else {
+      this.country = country;
+      this.region = region;
+    }
+  }
+
+  get isCountry() {
+    return this.country && !this.region;
+  }
+
+  get isProvince() {
+    return this.country && this.region;
+  }
+
+  get isSpecial() {
+    return !this.country;
+  }
+
+  get isShip() {
+    let country = this.country || '';
+    let region = this.region || '';
+
+    return [country, region].some(x => x.includes('Princess')) || [country, region].some(x => x.startsWith('MS '));
+  }
+
+  get code() {
+    if (this.isProvince) {
+      return window.stateCodes[this.country][this.region];
+    } else if (this.isCountry) {
+      return window.countryCodes[this.country];
+    } else {
+      return window.specialCodes[this.region];
+    }
+  }
+
+  get dataKey() {
+    return this.isCountry ? this.country.toLowerCase() : (this.country + '#' + this.region).toLowerCase();
+  }
+
+  formatForLegend() {
+    let name = this.region || this.country;
+
+    switch (name) {
+      case 'South Korea': return 'S. Korea';
+      case 'United Kingdom': return 'UK';
+      case 'United States': return 'USA';
+      case 'Georgia':
+        return (this.country == 'United States') ? 'Georgia (US)' : 'Georgia (republic)';
+      default: return name;
+    }
+  }
+
+  formatForPermalink() {
+    return this.formatForTitle()
+            .replace(/\, /g, '_')
+            .replace(/\s+/g, '_')
+            .toLowerCase();
+  }
+
+  formatForTitle() {
+    if (this.isSpecial) {
+      return this.region;
+    } else if (this.isCountry) {
+      return this.country;
+    } else {
+      return `${this.region}, ${this.country}`;
+    }
+  }
+}
 
 
 // --- init
@@ -211,6 +293,7 @@ function initCorona() {
   calculateTotalPopulations();
   buildCodeMap();
   buildPlaceMap();
+  calculateActives();
 
   buildSidebarList();
   restoreSelectedCountries();
@@ -218,6 +301,7 @@ function initCorona() {
 
   watchForDarkMode();
   watchForPermalinkChanges();
+  setupKeyboardShortcuts();
 }
 
 function buildSidebarList() {
@@ -231,19 +315,19 @@ function buildSidebarList() {
   let sortedItems = window.coronaData.sortedBy(function(item) {
     return [
       item['order'] || 1000,
-      (item['place'][0] || '').toLowerCase(),
-      (item['place'][1] || '').toLowerCase()
+      (item['place'].country || '').toLowerCase(),
+      (item['place'].region || '').toLowerCase()
     ]
   });
 
   sortedItems.forEach(function(item) {
     let place = item['place'];
-    let autocompleteName = place[1] || place[0];
+    let autocompleteName = place.region || place.country;
 
-    if (place[0]) {
-      if (place[0] == 'United States' && place[1] == 'Georgia') {
+    if (place.country) {
+      if (place.country == 'United States' && place.region == 'Georgia') {
         autocompleteList.push('Georgia US');
-      } else if (!isShip(place)) {
+      } else if (!place.isShip) {
         autocompleteList.push(autocompleteName);
       }
     } else {
@@ -254,21 +338,24 @@ function buildSidebarList() {
 
     if (item['hidden']) { return }
 
-    if (place[1] && place[0]) {
-      if ((!window.stateCodes[place[0]] || !window.stateCodes[place[0]][place[1]]) && window.console) {
-        console.error("Missing state code for " + place);
-      }
-    } else if (place[0]) {
-      if (!window.countryCodes[place[0]] && window.console) {
-        console.error("Missing country code for " + place[0]);
+    if (window.console) {
+      if (place.isProvince) {
+        if (!window.stateCodes[place.country] || !window.stateCodes[place.country][place.region]) {
+          console.error(`Missing state code for ${place.country}/${place.region}`);
+        }
+      } else if (place.isCountry) {
+        if (!window.countryCodes[place.country]) {
+          console.error(`Missing country code for ${place.country}`);
+        }
       }
     }
 
     let a = document.createElement('a');
 
-    a.tag = formatPlaceForPermalink(place);
-    a.country = place[0];
-    a.region = place[1];
+    a.tag = place.formatForPermalink();
+    a.country = place.country;
+    a.region = place.region;
+    a.place = place;
 
     if (a.tag == 'compare_countries') {
       a.tag = 'compare';
@@ -284,30 +371,30 @@ function buildSidebarList() {
       let oldOffset = a.parentElement.offsetTop;
 
       selectPlace(place, a.component);
-      a.classList.add('selected');
-
       updatePermalink(a.tag);
 
       let newOffset = a.parentElement.offsetTop;
       list.scrollTop += (newOffset - oldOffset);
 
+      a.focus();
+
       return false;
     };
 
-    if (!place[0]) {
+    if (place.isSpecial) {
       a.classList.add('total');
-      a.innerText = place[1];
-    } else if (place[1]) {
+      a.innerText = place.region;
+    } else if (place.isProvince) {
       a.classList.add('region');
 
       let countrySpan = document.createElement('span');
       countrySpan.classList.add('country');
-      countrySpan.innerText = place[0] + ' >';
+      countrySpan.innerText = place.country + ' >';
       a.appendChild(countrySpan);
 
-      a.appendChild(document.createTextNode(place[1]));
+      a.appendChild(document.createTextNode(place.region));
     } else {
-      a.innerText = place[0];
+      a.innerText = place.country;
     }
 
     let currentCount;
@@ -320,7 +407,7 @@ function buildSidebarList() {
       currentCount = '-';
     }
 
-    if (!isShip(place)) {
+    if (!place.isShip) {
       ranking.push([currentCount, place]);
     }
 
@@ -347,19 +434,19 @@ function buildCodeMap() {
   let map = {};
 
   Object.keys(window.countryCodes).forEach(function(name) {
-    map[window.countryCodes[name]] = [name, null];
+    map[window.countryCodes[name]] = new Place(name, null);
   });
 
   Object.keys(window.stateCodes).forEach(function(country) {
     let regionMap = window.stateCodes[country];
 
     Object.keys(regionMap).forEach(function(name) {
-      map[regionMap[name]] = [country, name];
+      map[regionMap[name]] = new Place(country, name);
     });
   });
 
   Object.keys(window.specialCodes).forEach(function(name) {
-    map[window.specialCodes[name]] = [null, name];
+    map[window.specialCodes[name]] = new Place(null, name);
   });
 
   window.codeMap = map;
@@ -369,11 +456,38 @@ function buildPlaceMap(json) {
   let map = {};
 
   window.coronaData.forEach(function(item) {
-    let key = dataKeyForPlace(item['place']);
+    item['place'] = new Place(item['place']);
+
+    let key = item['place'].dataKey;
     map[key] = item['data'];
   });
 
   window.placeMap = map;
+}
+
+function calculateActives() {
+  let map = {};
+
+  window.coronaData.forEach(function(item) {
+    let place = item['place'];
+    let json = item['data'];
+    if (!json) { return }
+
+    let dates = Object.keys(json);
+
+    if (dates.some(d => json[d][2] > 0)) {
+      map[place.dataKey] = true;
+      dates.forEach(function(d) {
+        if (json[d][0]) {
+          json[d][3] = json[d][0] - (json[d][1] || 0) - (json[d][2] || 0);
+        } else {
+          json[d][3] = json[d][0];
+        }
+      });
+    }
+  });
+
+  window.activeMap = map;
 }
 
 function calculateDateRange() {
@@ -418,17 +532,34 @@ function initializeFromPermalink() {
     }
   }
 
+  window.showTrend = true;
+  document.getElementById('show_trend').checked = true;
+
+  let trendField = document.getElementById('trend_length');
+  trendField.value = getStorageItem('trendLength') || DEFAULT_TREND;
+
   if (viewName == 'compare') {
     let question = hash.indexOf('?');
     if (question > -1) {
       let options = hash.slice(question + 1).split('&').map(t => t.split('='));
 
+      if (window.currentMode == 'daily' || window.currentMode == 'percent') {
+        window.showTrend = false;
+        document.getElementById('show_trend').checked = false;
+      }
+
       options.forEach(function(opt) {
         switch (opt[0]) {
         case 'val':
-          if (opt[1] == 'd') {
+          switch (opt[1]) {
+          case 'd':
             window.currentValueMode = 'deaths';
             selectValueMode('deaths', false);
+            break;
+          case 'a':
+            window.currentValueMode = 'active';
+            selectValueMode('active', false);
+            break;
           };
           break;
         case 'align100':
@@ -443,9 +574,19 @@ function initializeFromPermalink() {
           window.byPopulation = true;
           document.getElementById('by_population').checked = true;
           break;
+        case 'trend':
+          window.showTrend = true;
+          document.getElementById('show_trend').checked = true;
+          trendField.value = parseInt(opt[1], 10);
+          adjustTrendLengthSize(trendField);
+          break;
         case 'c':
           let codes = opt[1];
-          setSelectedCountries((codes == '') ? [] : codes.split(',').map(findPlaceByCode).filter(c => c));
+          if (codes == '') {
+            setSelectedCountries([]);
+          } else {
+            setSelectedCountries(codes.split(',').map(findPlaceByCode).filter(c => c));
+          }
           break;
         }
       });
@@ -457,12 +598,13 @@ function initializeFromPermalink() {
   let rows = Array.from(document.getElementById('list').querySelectorAll('a'));
   let linkedRow = rows.find(a => a.tag == viewName);
 
-  if (linkedRow) {
-    selectPlace([linkedRow.country, linkedRow.region], linkedRow.component);
-    linkedRow.scrollIntoViewIfNeeded();
-  } else {
-    selectPlace([null, 'Total']);
+  if (!linkedRow) {
+    linkedRow = rows.find(a => !a.country && a.region == 'Total');
   }
+
+  selectPlace(linkedRow.place, linkedRow.component);
+  linkedRow.scrollIntoView({ block: 'center' });
+  linkedRow.focus();
 }
 
 function updatePermalink(tag) {
@@ -495,6 +637,9 @@ function updatePermalink(tag) {
     case 'deaths':
       options['val'] = 'd';
       break;
+    case 'active':
+      options['val'] = 'a';
+      break;
     }
 
     if (window.alignBy100) {
@@ -509,13 +654,13 @@ function updatePermalink(tag) {
       options['pop'] = 1;
     }
 
-    options['c'] = window.selectedCountries.map(codeForPlace).filter(c => c).join(',');
-
-    let keys = Object.keys(options);
-
-    if (keys.length > 0) {
-      url += '?' + keys.map(k => k + '=' + options[k]).join('&');
+    if (window.showTrend && (window.currentMode == 'daily' || window.currentMode == 'percent')) {
+      options['trend'] = getTrendLength();
     }
+
+    options['c'] = window.selectedCountries.map(c => c.code).filter(c => c).join(',');
+
+    url += '?' + Object.keys(options).map(k => k + '=' + options[k]).join('&');
   }
 
   history.replaceState({}, null, url);
@@ -544,7 +689,7 @@ function watchForPermalinkChanges() {
 }
 
 function restoreSelectedCountries() {
-  let list = localStorage.getItem('selectedCountries');
+  let list = getStorageItem('selectedCountries');
 
   if (list) {
     window.selectedCountries = list.split(',').map(findPlaceByCode).filter(c => c);
@@ -554,13 +699,79 @@ function restoreSelectedCountries() {
 function setSelectedCountries(selectedCountries) {
   window.selectedCountries = selectedCountries;
 
-  try {
-    localStorage.setItem('selectedCountries', selectedCountries.map(codeForPlace).filter(c => c).join(','));
-  } catch (error) {}
+  setStorageItem('selectedCountries', selectedCountries.map(c => c.code).filter(c => c).join(','));
+}
+
+function setupKeyboardShortcuts() {
+  document.addEventListener("keypress", function(e) {
+    if (e.key.toLowerCase() == 'f' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      document.getElementById('search').querySelector('input').focus();
+      return false;
+    }
+
+    if (e.key.toLowerCase() == 'escape') {
+      if (document.getElementById('help_container').style.display == 'block') {
+        closeHelp();
+        return false;
+      } else if (document.getElementById('extra_panel').classList.contains('visible')) {
+        toggleExtraPanel();
+        return false;
+      }
+    }
+  }, false);
+
+  document.getElementById('list').addEventListener("keydown", function(e) {
+    switch (e.key.toLowerCase()) {
+    case 'arrowdown':
+      e.preventDefault();
+      moveSelection(1);
+      return false;
+    case 'arrowup':
+      e.preventDefault();
+      moveSelection(-1);
+      return false;
+    }
+  }, false);
+}
+
+function moveSelection(change) {
+  let entries = Array.from(document.getElementById('list').querySelectorAll('a')).filter(a => a.scrollHeight > 0);
+
+  let index = entries.findIndex(a => a.classList.contains('selected'));
+  let newIndex = index + change;
+
+  if (newIndex >= 0 && newIndex < entries.length) {
+    let a = entries[newIndex];
+
+    selectPlace(a.place, a.component);
+    updatePermalink(a.tag);
+    a.scrollIntoView({ block: 'nearest' });
+  }
 }
 
 
 // -- handling list controls
+
+function onCountrySearchKeyDown(event) {
+  switch (event.key.toLowerCase()) {
+  case 'arrowup':
+    event.preventDefault();
+    moveSelection(-1);
+    break;
+  case 'arrowdown':
+    event.preventDefault();
+    moveSelection(1);
+    break;
+  case 'escape':
+    let search = document.getElementById('search').querySelector('input[type=search]');
+    let text = search.value;
+
+    if (text == '') {
+      search.blur();
+    }
+  }
+}
 
 function onCountrySearch(event) {
   let search = document.getElementById('search').querySelector('input[type=search]');
@@ -574,7 +785,7 @@ function onCountrySearch(event) {
 
     let selected = elements.find(a => a.classList.contains('selected'));
     if (selected) {
-      selected.scrollIntoViewIfNeeded();
+      selected.scrollIntoView({ block: 'center' });
     }
   } else {
     list.classList.add('filtered');
@@ -603,7 +814,7 @@ function onCountrySearch(event) {
 
 function selectMode(a, redraw) {
   if (typeof a == 'string') {
-    a = document.querySelector('a[data-mode="' + a + '"]');
+    a = document.querySelector(`a[data-mode="${a}"]`);
   }
 
   let previousMode = window.currentMode;
@@ -626,8 +837,7 @@ function selectMode(a, redraw) {
     } else if (window.inCompareMode) {
       resetComparedCountries();
     } else {
-      let place = window.currentPlace;
-      selectPlace(place);
+      selectPlace(window.currentPlace);
     }
   }
 
@@ -636,7 +846,7 @@ function selectMode(a, redraw) {
 
 function selectValueMode(a, redraw) {
   if (typeof a == 'string') {
-    a = document.querySelector('a[data-mode="' + a + '"]');
+    a = document.querySelector(`a[data-mode="${a}"]`);
   }
 
   window.currentValueMode = a.getAttribute('data-mode');
@@ -691,29 +901,45 @@ function updateModeSelectorElements(elements) {
 }
 
 function updateCheckboxes(sender) {
+  let checkboxes = document.getElementById('checkboxes');
+
   let spanAlignBy100 = document.getElementById('span_align_by_100');
   let spanLastWeeks = document.getElementById('span_last_weeks');
   let spanByPopulation = document.getElementById('span_by_population');
+  let spanShowTrend = document.getElementById('span_show_trend');
 
   let alignBy100 = spanAlignBy100.querySelector('input');
   let lastWeeks = spanLastWeeks.querySelector('input');
   let byPopulation = spanByPopulation.querySelector('input');
+  let showTrend = spanShowTrend.querySelector('input');
 
   switch (window.currentMode) {
   case 'linear':
   case 'logarithmic':
-  case 'daily':
     spanAlignBy100.style.display = 'inline';
     spanLastWeeks.style.display = 'none';
     spanByPopulation.style.display = 'inline';
+    spanShowTrend.style.display = 'none';
 
     window.lastWeeks = false;
     lastWeeks.checked = false;
     break;
+
+  case 'daily':
+    spanAlignBy100.style.display = 'inline';
+    spanLastWeeks.style.display = 'none';
+    spanByPopulation.style.display = 'inline';
+    spanShowTrend.style.display = 'inline';
+
+    window.lastWeeks = false;
+    lastWeeks.checked = false;
+    break;
+
   case 'percent':
     spanAlignBy100.style.display = 'inline';
     spanLastWeeks.style.display = 'inline';
     spanByPopulation.style.display = 'none';
+    spanShowTrend.style.display = 'inline';
 
     window.byPopulation = false;
     byPopulation.checked = false;
@@ -729,6 +955,9 @@ function updateCheckboxes(sender) {
       window.lastWeeks = false;
     }
   }
+
+  let visibleCheckboxes = Array.from(checkboxes.querySelectorAll('span')).filter(c => c.style.display == 'inline');
+  checkboxes.className = 'shows' + visibleCheckboxes.length;
 }
 
 function changeAlignByDate() {
@@ -764,6 +993,54 @@ function changeByPopulation() {
   resetComparedCountries();
 }
 
+function changeShowTrend() {
+  let checkbox = document.getElementById('show_trend');
+  window.showTrend = checkbox.checked;
+
+  let trendField = document.getElementById('trend_length');
+  let trendLength = parseInt(trendField.value, 10);
+
+  if (isNaN(trendLength)) {
+    trendLength = 3;
+  } else if (trendLength < 1) {
+    trendLength = 1;
+  } else if (trendLength > 99) {
+    trendLength = 99;
+  }
+
+  trendField.value = String(trendLength);
+
+  updatePermalink(null);
+  resetComparedCountries();
+}
+
+function getTrendLength() {
+  return parseInt(document.getElementById('trend_length').value, 10);
+}
+
+function onFocusTrendLength(field) {
+  field.style.width = '20px';
+  setTimeout(function() { field.select() }, 10);
+  setTimeout(function() { field.select() }, 100);
+}
+
+function onBlurTrendLength(field) {
+  adjustTrendLengthSize(field);
+  setStorageItem('trendLength', getTrendLength());
+
+  let checkbox = document.getElementById('show_trend');
+  if (!checkbox.checked) {
+    checkbox.checked = true;
+    window.showTrend = true;
+    updatePermalink(null);
+    resetComparedCountries();
+  }
+}
+
+function adjustTrendLengthSize(field) {
+  field.style.width = (field.value.length > 1) ? '20px' : '';
+}
+
 function onAddCountryKeyPress(e) {
   document.getElementById('place_search').classList.remove('error');
 
@@ -783,15 +1060,15 @@ function addSelectedCountry() {
   let entry = window.coronaData.find(function(item) {
     let place = item['place'];
 
-    if (place[0]) {
+    if (place.country) {
       return (
-        text == 'georgia us' && place[0] == 'United States' && place[1] == 'Georgia' ||
-        text == 'georgia' && place[0] == 'Georgia' ||
-        place[0].toLowerCase() == text && place[1] == null ||
-        place[1] && place[1].toLowerCase() == text
+        text == 'georgia us' && place.country == 'United States' && place.region == 'Georgia' ||
+        text == 'georgia' && place.country == 'Georgia' ||
+        place.isCountry && place.country.toLowerCase() == text ||
+        place.isProvince && place.region.toLowerCase() == text
       );
     } else {
-      return place[1].toLowerCase() == text && item['autocomplete'];
+      return place.region.toLowerCase() == text && item['autocomplete'];
     }
   });
 
@@ -843,11 +1120,6 @@ function toggleExtraPanel() {
   } else {
     panel.classList.add('visible');
     document.querySelector('#country_selection .add img').style.visibility = 'hidden';
-
-    document.querySelector('#settings_button').style.border = 'none';
-    document.querySelector('#settings_button').style.top = '22px';
-    document.querySelector('#settings_button').style.padding = '0';
-    document.querySelector('#settings_button').style.paddingRight = '6px';
   }
 
   return false;
@@ -861,14 +1133,14 @@ function selectPlace(place, component) {
 
   let rows = Array.from(document.getElementById('list').querySelectorAll('li a'));
   rows.forEach(function(a) {
-    if (a.country == place[0] && a.region == place[1]) {
+    if (a.country == place.country && a.region == place.region) {
       a.classList.add('selected');
     } else {
       a.classList.remove('selected');
     }
   });
   rows.filter(a => a.country != null && a.region != null).forEach(function(a) {
-    if (a.country == place[0]) {
+    if (a.country == place.country) {
       a.classList.add('expanded');
     } else {
       a.classList.remove('expanded');
@@ -918,7 +1190,7 @@ function updateContainerSize() {
     margin += document.getElementById('warning').scrollHeight;
   }
 
-  document.getElementById('chart_container').style.height = 'calc(100vh - ' + margin + 'px)';
+  document.getElementById('chart_container').style.height = `calc(100vh - ${margin}px)`;
 }
 
 
@@ -937,13 +1209,13 @@ function createNewChart(params) {
 function buildSingleCountryChart(place) {
   let json = getDataForPlace(place);
   let dates = Object.keys(json).filter(d => json[d][0] > 0).sortedBy(dateSort);
-  let placeName = formatPlaceForTitle(place);
+  let placeName = place.formatForTitle();
 
   let chartType, datasets, title, minX = undefined;
 
   if (currentMode == 'daily') {
     chartType = 'bar';
-    title = placeName + ' - daily increase';
+    title = `${placeName} - daily increase`;
     datasets = [
       {
         label: 'New confirmed',
@@ -968,7 +1240,7 @@ function buildSingleCountryChart(place) {
     minX = dates.find((d, i) => i > 0 && json[d][0] > json[dates[i-1]][0]);
 
     chartType = 'line';
-    title = placeName + ' - % increase';
+    title = `${placeName} - % increase`;
     datasets = [
       {
         label: '% increase confirmed',
@@ -1007,20 +1279,18 @@ function buildSingleCountryChart(place) {
       }
     ];
 
-    let recovered = dates.map(d => json[d][2]);
-
-    if (recovered.some(d => d > 0)) {
+    if (hasActivesForPlace(place)) {
       datasets = datasets.concat([
         {
           label: 'Recovered',
-          data: recovered,
+          data: dates.map(d => json[d][2]),
           borderColor: '#0c0',
           pointBackgroundColor: '#0c0',
           order: 2
         },
         {
           label: 'Active',
-          data: dates.map(d => json[d][0] ? json[d][0] - (json[d][1] || 0) - (json[d][2] || 0) : json[d][0]),
+          data: dates.map(d => json[d][3]),
           borderColor: '#6929c4',
           pointBackgroundColor: '#6929c4',
           order: 0
@@ -1121,7 +1391,7 @@ function resetComparedCountries(countrySet) {
 function addCountryToChart(place, data) {
   let chart = window.chart;
 
-  if (chart.data.datasets.find(d => d.label == formatPlaceForLegend(place))) {
+  if (chart.data.datasets.find(d => d.label == place.formatForLegend())) {
     return false;
   }
 
@@ -1147,48 +1417,64 @@ function addCountryToChart(place, data) {
 }
 
 function configureOptionsForCompareCountries(options, datasets) {
-  if (window.alignBy100 || window.selectedCountries.find(c => c[0] == 'China')) {
+  if (window.alignBy100 || window.selectedCountries.find(c => c.country == 'China')) {
     options.scales.xAxes[0].ticks.min = undefined;
   } else {
     options.scales.xAxes[0].ticks.min = '2/15';
   }
 
+  let trendLength = getTrendLength();
+  let trend = (window.showTrend) ? ` - ${trendLength}-day trend` : '';
+
   if (window.currentMode == 'percent') {
-    let value = (window.currentValueMode == 'deaths') ? 'deaths' : 'cases';
+    let value = chooseBasedOn(window.currentValueMode, {
+      deaths: '% increase of deaths',
+      active: '% change of active cases'
+    }, '% increase of confirmed cases');
 
-    options.title.text = 'Compare Countries (% increase of ' + value + ' - 3-day trend)';
+    options.title.text = `${value}${trend}`;
   } else if (window.currentMode == 'daily') {
-    let value = (window.currentValueMode == 'deaths') ? 'deaths' : 'cases';
+    let value = chooseBasedOn(window.currentValueMode, {
+      deaths: 'New daily deaths',
+      active: 'Daily change of active cases'
+    }, 'New daily cases');
+
     let per = (window.byPopulation) ? ' per 1 mln' : '';
 
-    options.title.text = 'Compare Countries (new daily ' + value + per + ')';
+    options.title.text = `${value}${per}${trend}`;
   } else {
-    let value = (window.currentValueMode == 'deaths') ? 'deaths' : 'confirmed cases';
+    let value = chooseBasedOn(window.currentValueMode, {
+      deaths: 'Total number of deaths',
+      active: 'Total active cases'
+    }, 'Total confirmed cases');
+
     let per = (window.byPopulation) ? ' per 1 mln' : '';
 
-    options.title.text = 'Compare Countries (' + value + per + ')';
+    options.title.text = `${value}${per}`;
   }
 
   if (window.currentMode == 'percent') {
     options.scales.yAxes[0].type = 'linear';
-    options.scales.yAxes[0].ticks.max = 1;
-    options.scales.yAxes[0].ticks.min = 0;
     options.scales.yAxes[0].ticks.precision = 2;
     options.tooltips.callbacks.label = renderTooltipPercentValue;
     options.tooltips.callbacks.footer = Chart.defaults.global.tooltips.callbacks.footer;
 
     if (window.lastWeeks) {
-      options.scales.xAxes[0].ticks.min = formatDate(window.dateRange[window.dateRange.length - 21]);
-      options.scales.yAxes[0].ticks.max = getRecentMaxInDatasets(datasets, 21);
+      options.scales.xAxes[0].ticks.min = formatDate(window.dateRange[window.dateRange.length - LAST_WEEKS_DAYS]);
+      options.scales.yAxes[0].ticks.min = getRecentMinInDatasets(datasets, LAST_WEEKS_DAYS);
+      options.scales.yAxes[0].ticks.max = getRecentMaxInDatasets(datasets, LAST_WEEKS_DAYS);
       options.legend.onClick = function(e, legendItem) {
         Chart.defaults.global.legend.onClick.call(this, e, legendItem);
 
         let chart = this.chart;
         let visibleDatasets = chart.data.datasets.filter((d, i) => !chart.getDatasetMeta(i).hidden);
-        chart.options.scales.yAxes[0].ticks.max = getRecentMaxInDatasets(visibleDatasets, 21);
+        chart.options.scales.yAxes[0].ticks.max = getRecentMaxInDatasets(visibleDatasets, LAST_WEEKS_DAYS);
+        chart.options.scales.yAxes[0].ticks.min = getRecentMinInDatasets(visibleDatasets, LAST_WEEKS_DAYS);
         chart.update();
       };
     } else {
+      options.scales.yAxes[0].ticks.min = (window.currentValueMode == 'active') ? undefined : 0;
+      options.scales.yAxes[0].ticks.max = 1;
       options.legend.onClick = Chart.defaults.global.legend.onClick;
     }
   } else {
@@ -1201,7 +1487,7 @@ function configureOptionsForCompareCountries(options, datasets) {
 
     if (window.byPopulation && window.currentMode == 'logarithmic' && !window.alignBy100) {
       options.scales.yAxes[0].ticks.min = 0.5;
-    } else if (window.currentMode == 'daily') {
+    } else if (window.currentMode == 'daily' && window.currentValueMode != 'active') {
       options.scales.yAxes[0].ticks.min = 0;
     } else {
       options.scales.yAxes[0].ticks.min = undefined;
@@ -1211,10 +1497,8 @@ function configureOptionsForCompareCountries(options, datasets) {
   if (window.alignBy100) {
     let maxLength = Math.max.apply(null, datasets.map(d => d.data.length))
 
-    options.tooltips.callbacks.title = renderTooltipTitleForDay;
     options.scales.xAxes[0].ticks.max = "" + (maxLength + 4);
   } else {
-    options.tooltips.callbacks.title = Chart.defaults.global.tooltips.callbacks.title;
     options.scales.xAxes[0].ticks.max = undefined;
   }
 }
@@ -1234,13 +1518,12 @@ function getTop10Countries(filter) {
 function getCountrySet(name) {
   switch (name) {
   case 'top_countries':
-    return getTop10Countries(c => !c[1]);
-  case 'top_in_europe':
-    return getTop10Countries(c => !c[1] && europeanCountries.includes(c[0]));
-  case 'top_us':
-    return getTop10Countries(c => c[1] && c[0] == 'United States');
   case 'top_exc_china':
-    return getTop10Countries(c => !c[1] && c[0] != 'China');
+    return getTop10Countries(c => c.isCountry && c.country != 'China');
+  case 'top_in_europe':
+    return getTop10Countries(c => c.isCountry && europeanCountries.includes(c.country));
+  case 'top_us':
+    return getTop10Countries(c => c.isProvince && c.country == 'United States');
   case 'compare_clear':
     return [];
   default:
@@ -1249,21 +1532,47 @@ function getCountrySet(name) {
 }
 
 function getRecentMaxInDatasets(datasets, days) {
-  let maxValues = datasets.map(ds => Math.max.apply(null, ds.data.slice(ds.data.length - days)));
+  let maxValues = datasets.map(ds => Math.max.apply(null, ds.data.slice(ds.data.length - days).filter(d => d)));
   let maxInAll = Math.max.apply(null, maxValues);
 
   return Math.min(1.0, Math.ceil(maxInAll * 20) / 20);
 }
 
+function getRecentMinInDatasets(datasets, days) {
+  let minValues = datasets.map(ds => Math.min.apply(null, ds.data.slice(ds.data.length - days).filter(d => d)));
+  let minInAll = Math.min.apply(null, minValues);
+
+  return Math.floor(minInAll * 20) / 20;
+}
+
 function datasetForCountry(place, colorIndex, dates, json, alignBy100, byPopulation, valueMode, viewMode) {
-  let valueIndex = (valueMode == 'deaths') ? 1 : 0;
   let values;
+  let valueIndex = chooseBasedOn(valueMode, { deaths: 1, active: 3 }, 0);
+
+  if (valueMode == 'active' && !hasActivesForPlace(place)) {
+    return {
+      label: place.formatForLegend(),
+      fill: true,
+      data: dates.map(d => undefined),
+      pointRadius: 0,
+      borderColor: '#ccc',
+      backgroundColor: 'white',
+      borderWidth: 1
+    }
+  };
+
+  let trendLength = (window.showTrend) ? getTrendLength() : 1;
 
   if (viewMode == 'percent') {
+    let first0 = dates.concat().reverse().findIndex(d => !json[d] || !json[d][valueIndex]);
+    if (first0 > -1) {
+      first0 = (dates.length - 1) - first0;
+    }
+
     values = dates.map(function(d, i) {
-      if (i > 0) {
-        for (let n = 3; n >= 1; n--) {
-          if (i >= n && json[d] && json[dates[i-n]] && json[dates[i-n]][valueIndex]) {
+      if (i > 0 && json[d]) {
+        for (let n = trendLength; n >= 1; n--) {
+          if (i >= n && (i-n) > first0 && json[dates[i-n]] && json[dates[i-n]][valueIndex]) {
             return percentIncreaseN(json[dates[i-n]][valueIndex], json[d][valueIndex], n);
           }
         }
@@ -1273,11 +1582,15 @@ function datasetForCountry(place, colorIndex, dates, json, alignBy100, byPopulat
     });
   } else if (viewMode == 'daily') {
     values = dates.map(function(d, i) {
-      if (i > 0 && json[d] && json[d][valueIndex] && json[dates[i-1]] && json[dates[i-1]][valueIndex]) {
-        return json[d][valueIndex] - json[dates[i-1]][valueIndex];
-      } else {
-        return null
+      if (i > 0 && json[d] && json[d][valueIndex]) {
+        for (let n = trendLength; n >= 1; n--) {
+          if (i >= n && json[dates[i-n]] && json[dates[i-n]][valueIndex]) {
+            return (json[d][valueIndex] - json[dates[i-n]][valueIndex]) / n;
+          }
+        }
       }
+
+      return null;
     });
   } else {
     values = dates.map(d => json[d] ? json[d][valueIndex] : undefined);
@@ -1302,19 +1615,19 @@ function datasetForCountry(place, colorIndex, dates, json, alignBy100, byPopulat
   if (byPopulation) {
     let population;
     
-    if (place[0] && place[1]) {
-      population = window.statePopulations[place[0]][place[1]];
-    } else if (place[0]) {
-      population = window.populations[place[0]];
+    if (place.isProvince) {
+      population = window.statePopulations[place.country][place.region];
+    } else if (place.isCountry) {
+      population = window.populations[place.country];
     } else {
-      population = window.populations[place[1]];
+      population = window.populations[place.region];
     }
 
     values = values.map(v => v && v / (population / 1000000.0));
   }
 
   let data = {
-    label: formatPlaceForLegend(place),
+    label: place.formatForLegend(),
     fill: false,
     data: values,
     borderColor: window.colorSet[colorIndex],
@@ -1355,7 +1668,8 @@ function chartOptions(placeName, mode) {
     },
     elements: {
       line: {
-        tension: 0,
+        borderJoinStyle: 'round',
+        tension: 0
       },
     },
     scales: {
@@ -1365,7 +1679,7 @@ function chartOptions(placeName, mode) {
           fontColor: isDarkMode() ? '#888' : undefined
         },
         gridLines: {
-          color: isDarkMode() ? '#333' : undefined
+          color: isDarkMode() ? '#333' : Chart.defaults.scale.gridLines.color
         }
       }],
       yAxes: [{
@@ -1380,8 +1694,8 @@ function chartOptions(placeName, mode) {
           callback: renderTickValue
         },
         gridLines: {
-          color: isDarkMode() ? '#333' : undefined,
-          zeroLineColor: isDarkMode() ? '#333' : undefined
+          color: isDarkMode() ? '#333' : Chart.defaults.scale.gridLines.color,
+          zeroLineColor: isDarkMode() ? '#333' : Chart.defaults.scale.gridLines.zeroLineColor
         }
       }]
     },
@@ -1391,7 +1705,8 @@ function chartOptions(placeName, mode) {
         footer: (BASIC_MODES.includes(mode)) ?
           renderTooltipFooter : Chart.defaults.global.tooltips.callbacks.footer,
         label: (mode == 'percent') ?
-          renderTooltipPercentValue : renderTooltipNormalValue
+          renderTooltipPercentValue : renderTooltipNormalValue,
+        title: renderTooltipTitleForDay
       }
     }
   }
@@ -1417,7 +1732,10 @@ function renderTooltipTitleForDay(tooltips, data) {
   let tip = tooltips[0];
 
 	if (tip.label.includes('/')) {
-    return tip.label;
+    let fields = tip.label.split('/').map(x => parseInt(x, 10));
+    let date = new Date(2020, fields[0] - 1, fields[1]);
+    
+    return `${WEEK_DAYS[date.getDay()]} ${tip.label}`;
   } else {
     return "Day " + tip.label;
   }
@@ -1461,9 +1779,10 @@ function renderTooltipFooter(tooltips, data) {
       let perc = Math.round((current / previous - 1) * 1000) / 10;
 
       if (diff >= 0) {
-        return '+' + perc + '% / ' + diff;
+        return `+${perc}% / ${diff}`;
       } else {
-        return perc + '% / ' + (-diff);
+        let minus = (perc == 0) ? '-' : '';
+        return `${minus}${perc}% / ${-diff}`;
       }
     } else {
       return null;
@@ -1498,18 +1817,8 @@ Array.prototype.sortedBy = function(getFields) {
   });
 };
 
-function codeForPlace(place) {
-  if (place[0] && place[1]) {
-    return window.stateCodes[place[0]][place[1]];
-  } else if (place[0]) {
-    return window.countryCodes[place[0]];
-  } else {
-    return window.specialCodes[place[1]];
-  }
-}
-
-function dataKeyForPlace(place) {
-  return place[1] ? (place[0] + '#' + place[1]).toLowerCase() : place[0].toLowerCase();
+function chooseBasedOn(value, options, defaultOption) {
+  return options[value] || defaultOption;
 }
 
 function dateSort(dateString) {
@@ -1531,41 +1840,8 @@ function formatDate(date) {
   return fields[0] + '/' + fields[1];
 }
 
-function formatPlaceForLegend(place) {
-  let name = place[1] || place[0];
-
-  switch (name) {
-    case 'South Korea': return 'S. Korea';
-    case 'United Kingdom': return 'UK';
-    case 'United States': return 'USA';
-    case 'Georgia':
-      return (place[0] == 'United States') ? 'Georgia (US)' : 'Georgia (republic)';
-    default: return name;
-  }
-}
-
-function formatPlaceForPermalink(place) {
-  return formatPlaceForTitle(place)
-          .replace(/\, /g, '_')
-          .replace(/\s+/g, '_')
-          .toLowerCase();
-}
-
-function formatPlaceForTitle(place) {
-  if (place[0] == null) {
-    // special view
-    return place[1];
-  } else if (place[1] == null) {
-    // country
-    return place[0];
-  } else {
-    // subregion
-    return place[1] + ", " + place[0];
-  }
-}
-
 function getDataForPlace(place) {
-  return window.placeMap[dataKeyForPlace(place)];
+  return window.placeMap[place.dataKey];
 }
 
 function getPermalinkHash() {
@@ -1576,15 +1852,16 @@ function getPermalinkTag() {
   return getPermalinkHash().replace(/[\.\?].*/, '').toLowerCase();
 }
 
-function isDarkMode() {
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+function getStorageItem(name) {
+  return localStorage.getItem(name);
 }
 
-function isShip(place) {
-  let country = place[0] || '';
-  let region = place[1] || '';
+function hasActivesForPlace(place) {
+  return window.activeMap[place.dataKey];
+}
 
-  return [country, region].some(x => x.includes('Princess')) || [country, region].some(x => x.startsWith('MS '));
+function isDarkMode() {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
 function percentIncrease(fromValue, toValue) {
@@ -1604,7 +1881,13 @@ function percentIncreaseN(fromValue, toValue, power) {
 }
 
 function placeSort(place) {
-  return [(place[0] || '').toLowerCase(), (place[1] || '').toLowerCase()];
+  return [(place.country || '').toLowerCase(), (place.region || '').toLowerCase()];
+}
+
+function setStorageItem(name, value) {
+  try {
+    localStorage.setItem(name, value);
+  } catch (error) {}
 }
 
 function uniqueDatesFromJSONList(jsons) {
